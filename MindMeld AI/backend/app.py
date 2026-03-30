@@ -5,7 +5,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = "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"
+API_KEY = "API KEY"
 
 url = "https://openrouter.ai/api/v1/chat/completions"
 
