@@ -1,0 +1,274 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* BACKGROUND */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top, #dcd9ff, #f4f3ff);
+  color: #000;
+  transition: 0.4s ease;
+}
+
+/* CONTAINER */
+.container {
+  width: 390px;
+  height: 610px;
+  backdrop-filter: blur(25px);
+  background: rgba(255,255,255,0.65);
+  border-radius: 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 60px rgba(108,99,255,0.25);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+/* HEADER */
+.header {
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  font-size: 32px;
+  margin-right: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.title {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* ICONS */
+.right span {
+  margin-left: 12px;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 8px;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+/* HOVER GLOW */
+.right span:hover {
+  background: #6c63ff;
+  color: white;
+  box-shadow: 0 0 12px #6c63ff;
+  transform: scale(1.1);
+}
+
+/* CHAT */
+#chatBox {
+  position: relative;
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+/* SCROLLBAR */
+#chatBox::-webkit-scrollbar {
+  width: 6px;
+}
+#chatBox::-webkit-scrollbar-thumb {
+  background: #b3b0ff;
+  border-radius: 10px;
+}
+
+/* MESSAGE ROW */
+.message-row {
+  display: flex;
+  margin: 12px 0;
+  animation: slideUp 0.3s ease;
+}
+
+.user {
+  justify-content: flex-end;
+}
+
+.bot {
+  justify-content: flex-start;
+}
+
+/* MESSAGE */
+.message {
+  padding: 12px 16px;
+  border-radius: 20px;
+  max-width: 70%;
+  position: relative;
+}
+
+/* USER */
+.user .message {
+  background: linear-gradient(135deg, #e6e6e6, #dcdcdc);
+  color: black;
+}
+
+/* BOT */
+.bot .message {
+  background: linear-gradient(135deg, #6c63ff, #8f88ff);
+  color: white;
+  box-shadow: 0 0 10px rgba(108,99,255,0.4);
+}
+
+/* BOT ICON */
+.bot-icon {
+  margin-right: 6px;
+  animation: pop 0.3s ease;
+}
+
+/* TIME */
+.time {
+  font-size: 10px;
+  margin-top: 5px;
+  opacity: 0.7;
+}
+
+/* INPUT AREA */
+.inputArea {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin: 10px;
+  border-radius: 30px;
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(10px);
+}
+
+/* INPUT */
+.inputArea input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+/* ATTACH */
+#attachBtn {
+  margin-right: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 21px;
+}
+
+#attachBtn:hover {
+  transform: scale(1.2);
+}
+
+/* SEND BUTTON GLOW 🔥 */
+#sendBtn {
+  background: linear-gradient(135deg, #6c63ff, #8f88ff);
+  color: white;
+  padding: 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 0 10px rgba(108,99,255,0.6);
+}
+
+/* HOVER MAGIC */
+#sendBtn:hover {
+  transform: scale(1.2) rotate(10deg);
+  box-shadow: 0 0 20px #6c63ff, 0 0 40px #8f88ff;
+}
+
+/* CLICK EFFECT */
+#sendBtn:active {
+  transform: scale(0.9);
+}
+
+/* TYPING */
+.typing {
+  display: flex;
+  gap: 5px;
+  padding-left: 15px;
+}
+
+.typing span {
+  width: 6px;
+  height: 6px;
+  background: #6c63ff;
+  border-radius: 50%;
+  animation: bounce 1s infinite;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ANIMATIONS */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pop {
+  from { transform: scale(0); }
+  to { transform: scale(1); }
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* 🌙 DARK MODE */
+body.dark {
+  background: radial-gradient(circle at top, #1c1c2e, #2b2b45);
+  color: white;
+}
+
+body.dark .container {
+  background: rgba(40,40,60,0.85);
+}
+
+body.dark .inputArea {
+  background: rgba(60,60,80,0.7);
+}
+
+body.dark input {
+  color: white;
+}
+
+body.dark .user .message {
+  background: #444;
+  color: white;
+}
+
+/* CENTER WELCOME TEXT */
+#welcomeMessage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+#emptyState {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}

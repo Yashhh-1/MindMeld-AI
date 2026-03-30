@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindMeld AI ✨</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="left">
+      <span class="logo">✨</span>
+      <span class="title">MindMeld AI</span>
+    </div>
+
+    <div class="right">
+      <span id="themeToggle">🌙</span>
+      <span id="refreshChat">🔄</span>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+   <div id="chatBox">
+
+    <!-- EMPTY STATE -->
+  <div id="emptyState">
+  <h2>Welcome to MindMeld AI ✨</h2>
+  <p>Share anything. Get helpful responses instantly.</p>
+</div>
+</div>
+
+  <!-- TYPING INDICATOR -->
+  <div id="typing" class="typing hidden">
+    <span></span><span></span><span></span>
+  </div>
+
+  <!-- INPUT -->
+  <div class="inputArea">
+    <span id="attachBtn">📎</span>
+    <input type="text" id="userInput" placeholder="Share anything..." />
+    <span id="sendBtn">➤</span>
+  </div>
+
+  <input type="file" id="fileInput" hidden>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
