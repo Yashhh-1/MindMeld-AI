@@ -1,11 +1,17 @@
 from flask import Flask, request, jsonify
-import requests
 from flask_cors import CORS
+
+import requests
+import PyPDF2
 
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = "API KEY"
+# =========================
+# OPENROUTER API
+# =========================
+
+API_KEY = "API_KEY_HERE"
 
 url = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -16,104 +22,241 @@ headers = {
     "X-Title": "MindMeld AI"
 }
 
-# 🧠 SYSTEM PERSONALITY (VERY IMPORTANT)
-messages = [
-    {
-        "role": "system",
-        "content": """
-You are MindMeld AI — a smart, emotionally supportive assistant 
-more like a friend who helps everyone to deal with anxiety, depression,
-panic attaack, stress, over thinking etc...
+# =========================
+# SYSTEM PROMPT
+# =========================
+
+SYSTEM_PROMPT = """
+You are MindMeld AI.
+
+Identity Rules (VERY IMPORTANT):
+- If user asks "who are you", "what is your name", "your name?", respond EXACTLY:
+  "Hi, I am MindMeld AI."
+
+- If user asks "what do you do", "what is your purpose", respond EXACTLY:
+  "Hi, I am MindMeld AI. I am your smart emotional companion."
 
 You are:
-- Intelligent like ChatGPT
-- Supportive like a caring friend or a big brother 
-  who helps you to deal with every thing
+- Calm
+- Friendly
+- Emotionally supportive
+- Human-like
 
-Your goals:
-- YOUR MAIN GOAL IS TO ANALYSE THE USER'S INPUT COMMAND'S
-  AND FIGURE OUT IF HE/SHE (ANYONE) NEED ANY EMOTIONAL SUPPORT
-- Answer all normal questions intelligently
-- ALSO MAINLY help users with anxiety, depression,
-panic attaack, stress, over thinking etc...
+You help users with stress, anxiety, panic, overthinking, and emotional confusion.
 
 Rules:
-- You are not only a assistant you are more like a caring friend or a big brother 
-  who helps you to deal with every thing
-- NEVER say you are ChatGPT or OpenAI
-- ALWAYS say your name is MindMeld AI if asked
-- Keep responses natural, not robotic more like a caring friend or a big brother 
-  who helps you to deal with every thing
+- Never sound robotic
+- Keep responses short
+- Never mention ChatGPT
+- Always follow identity rules strictly when triggered
 """
+
+conversation_history = [
+    {
+        "role": "system",
+        "content": SYSTEM_PROMPT
     }
 ]
 
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.json
-    user_input = data.get("message", "")
-    user_lower = user_input.lower()
+uploaded_text = ""
 
-    print("USER:", user_input)
+# =========================
+# CRISIS DETECTION
+# =========================
 
-    # 🚨 ONLY EXTREME CRISIS (strict)
-    crisis_phrases = [
-        "kill myself", "end my life", "suicide", "i am done", "its over"
-    ]
+crisis_words = [
+    "kill myself",
+    "suicide",
+    "end my life",
+    "i want to die",
+    "i am done",
+    "die",
+    "kill me"
+]
 
-    if any(p in user_lower for p in crisis_phrases):
-        return jsonify({
-            "reply": """I'm really sorry you're feeling this way 💔
+CRISIS_MESSAGE = """
+I’m really sorry you’re feeling this way.
 
-You are not alone. Please reach out immediately:
+You are not alone. Your life matters and help is available.
 
-📞 India Helpline: 9152987821  
-🌐 https://telemanas.mohfw.gov.in/home
+🇮🇳 India Mental Health Helplines:
+• KIRAN: 1800-599-0019 (24/7)
+• AASRA: +91-22-27546669
+• iCALL: 9152987821
 
-Try this with me:
-👉 Inhale 4 seconds  
-👉 Hold 4 seconds  
-👉 Exhale 6 seconds  
-
-Repeat slowly. I'm here with you 🤝"""
-        })
-
-    # 😌 SOFT PANIC DETECTION (NOT blocking AI)
-    panic_words = ["panic", "anxiety", "anxious", "overthinking", "depression", "stress", "tensed"]
-
-    extra_context = ""
-    if any(word in user_lower for word in panic_words):
-        extra_context = """
-The user might be anxious. Respond calmly and include a small breathing or grounding suggestion.
+Please consider talking to someone you trust or a professional.
+I’m here with you. ❤️
 """
 
-    # 👇 ADD USER MESSAGE
-    messages.append({
-        "role": "user",
-        "content": user_input + extra_context
-    })
+# =========================
+# CHAT ROUTE
+# =========================
 
-    payload = {
-        "model": "openai/gpt-4o-mini",
-        "messages": messages
-    }
+@app.route("/chat", methods=["POST"])
+def chat():
+
+    global uploaded_text
+    global conversation_history
 
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        result = response.json()
+        data = request.get_json(silent=True) or {}
+        user_input = data.get("message", "").strip()
+
+        if not user_input:
+            return jsonify({"reply": "Please type something."})
+
+        user_lower = user_input.lower()
+        print("USER:", user_input)
+
+        # =========================
+        # CRISIS CHECK (SAFE + FINAL)
+        # =========================
+
+        if any(word in user_lower for word in crisis_words):
+            return jsonify({"reply": CRISIS_MESSAGE})
+
+        # =========================
+        # ATTACH FILE CONTEXT
+        # =========================
+
+        final_user_message = user_input
+
+        if uploaded_text:
+            final_user_message += "\n\n[Document Context]\n" + uploaded_text[:3000]
+
+        conversation_history.append({
+            "role": "user",
+            "content": final_user_message
+        })
+
+        # =========================
+        # MEMORY LIMIT
+        # =========================
+
+        if len(conversation_history) > 25:
+            conversation_history = [conversation_history[0]] + conversation_history[-24:]
+
+        # =========================
+        # API PAYLOAD
+        # =========================
+
+        payload = {
+            "model": "openai/gpt-4o-mini",
+            "messages": conversation_history,
+            "temperature": 0.6,
+            "max_tokens": 250
+        }
+
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=25
+        )
+
+        # =========================
+        # SAFE JSON PARSE FIX
+        # =========================
+
+        try:
+            result = response.json()
+        except Exception:
+            return jsonify({"reply": "Invalid response from AI server."})
+
+        print("RAW:", result)
+
+        if "choices" not in result:
+            return jsonify({"reply": "MindMeld AI is temporarily unavailable."})
 
         bot_reply = result["choices"][0]["message"]["content"]
 
-        messages.append({"role": "assistant", "content": bot_reply})
+        bot_reply = bot_reply.replace("ChatGPT", "MindMeld AI").strip()
 
-        print("BOT:", bot_reply)
+        conversation_history.append({
+            "role": "assistant",
+            "content": bot_reply
+        })
 
         return jsonify({"reply": bot_reply})
 
     except Exception as e:
         print("ERROR:", e)
-        return jsonify({"reply": "Error connecting to AI"})
-        
+        return jsonify({"reply": "Server error. Please try again."})
+
+
+# =========================
+# PDF UPLOAD
+# =========================
+
+@app.route("/upload", methods=["POST"])
+def upload_file():
+
+    global uploaded_text
+
+    try:
+        file = request.files.get("file")
+
+        if not file:
+            return jsonify({"success": False, "message": "No file uploaded."})
+
+        if file.filename.endswith(".pdf"):
+
+            pdf_reader = PyPDF2.PdfReader(file)
+
+            extracted_text = ""
+
+            # FIX: removed duplicate text bug
+            for page in pdf_reader.pages:
+                text = page.extract_text() or ""
+                extracted_text += text + "\n"
+
+            uploaded_text = extracted_text
+
+            return jsonify({
+                "success": True,
+                "message": "PDF analyzed successfully.",
+                "preview": extracted_text[:1000]
+            })
+
+        return jsonify({
+            "success": False,
+            "message": "Only PDF files supported."
+        })
+
+    except Exception as e:
+        print("UPLOAD ERROR:", e)
+        return jsonify({"success": False, "message": "Error reading file."})
+
+
+# =========================
+# CLEAR MEMORY
+# =========================
+
+@app.route("/clear", methods=["POST"])
+def clear_memory():
+
+    global uploaded_text
+    global conversation_history
+
+    uploaded_text = ""
+
+    conversation_history = [
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT
+        }
+    ]
+
+    return jsonify({"success": True})
+
+
+# =========================
+# RUN SERVER
+# =========================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        debug=True,
+        host="0.0.0.0",
+        port=5000
+    )
