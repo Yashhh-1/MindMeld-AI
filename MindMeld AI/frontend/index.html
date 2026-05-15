@@ -1,55 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MindMeld AI ✨</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>MindMeld AI</title>
+
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
 </head>
 
 <body>
 
-<div class="container">
+  <!-- AURORA BACKGROUND -->
+  <div class="aurora aurora1" aria-hidden="true"></div>
+  <div class="aurora aurora2" aria-hidden="true"></div>
+  <div class="aurora aurora3" aria-hidden="true"></div>
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="left">
-      <span class="logo">✨</span>
-      <span class="title">MindMeld AI</span>
-    </div>
+  <div class="container">
 
-    <div class="right">
-      <span id="themeToggle">🌙</span>
-      <span id="refreshChat">🔄</span>
-    </div>
+    <!-- HEADER -->
+    <header class="header">
+
+      <div class="left">
+
+        <div class="logoBox" aria-label="MindMeld AI Logo">
+          <i class="fa-solid fa-spa"></i>
+        </div>
+
+        <div>
+          <div class="title">MindMeld AI</div>
+          <div class="subtitle">
+            Your Smart Emotional Companion
+          </div>
+        </div>
+
+      </div>
+
+      <div class="right">
+
+        <button id="themeToggle" class="iconBtn" aria-label="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+
+        <button id="refreshChat" class="iconBtn" aria-label="Refresh Chat">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+
+      </div>
+
+    </header>
+
+    <!-- CHAT AREA -->
+    <main id="chatBox">
+
+      <div id="emptyState">
+        <h2>MindMeld AI</h2>
+
+        <p>
+          Your Intelligent Safe Space.<br>
+          Talk freely, Share thoughts, Feel heard.
+        </p>
+      </div>
+
+    </main>
+
+    <!-- INPUT -->
+    <footer class="inputArea">
+
+      <button id="attachBtn" class="inputIcon" aria-label="Attach File">
+        <i class="fa-solid fa-paperclip"></i>
+      </button>
+
+      <input
+        type="text"
+        id="userInput"
+        placeholder="Share your feelings..."
+        autocomplete="off"
+      />
+
+      <button id="sendBtn" aria-label="Send Message">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+
+    </footer>
+
+    <input type="file" id="fileInput" hidden />
+
   </div>
 
-  <!-- CHAT -->
-   <div id="chatBox">
+  <script src="script.js"></script>
 
-    <!-- EMPTY STATE -->
-  <div id="emptyState">
-  <h2>Welcome to MindMeld AI ✨</h2>
-  <p>Share anything. Get helpful responses instantly.</p>
-</div>
-</div>
+  <!-- UX IMPROVEMENT SCRIPT (SAFE ADD-ON) -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const input = document.getElementById("userInput");
+      const sendBtn = document.getElementById("sendBtn");
 
-  <!-- TYPING INDICATOR -->
-  <div id="typing" class="typing hidden">
-    <span></span><span></span><span></span>
-  </div>
+      if (!input || !sendBtn) return;
 
-  <!-- INPUT -->
-  <div class="inputArea">
-    <span id="attachBtn">📎</span>
-    <input type="text" id="userInput" placeholder="Share anything..." />
-    <span id="sendBtn">➤</span>
-  </div>
+      function updateButtonState() {
+        const hasText = input.value.trim().length > 0;
 
-  <input type="file" id="fileInput" hidden>
+        sendBtn.disabled = !hasText;
+        sendBtn.style.opacity = hasText ? "1" : "0.5";
+        sendBtn.style.cursor = hasText ? "pointer" : "not-allowed";
+      }
 
-</div>
+      // initial state
+      updateButtonState();
 
-<script src="script.js"></script>
+      input.addEventListener("input", updateButtonState);
+    });
+  </script>
+
 </body>
 </html>
