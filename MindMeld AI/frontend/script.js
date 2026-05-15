@@ -9,130 +9,178 @@ document.addEventListener("DOMContentLoaded", () => {
   const fileInput = document.getElementById("fileInput");
   const emptyState = document.getElementById("emptyState");
 
-  // =========================
-  // 🌙 LOAD THEME
-  // =========================
-  const savedTheme = localStorage.getItem("theme");
+  let isTyping = false;
 
-  if (savedTheme === "dark") {
-    document.body.classList.add("dark");
-    themeBtn.textContent = "☀️";
-  } else {
-    themeBtn.textContent = "🌙";
+  // Safety check (prevents crash if DOM breaks)
+  if (!input || !chatBox || !sendBtn || !themeBtn) {
+    console.error("Critical UI elements missing");
+    return;
   }
 
   // =========================
-  // 🌙 TOGGLE THEME
+  // AUTO FOCUS
   // =========================
-  themeBtn.onclick = () => {
-    document.body.classList.toggle("dark");
+  input.focus();
 
-    if (document.body.classList.contains("dark")) {
-      localStorage.setItem("theme", "dark");
-      themeBtn.textContent = "☀️";
-    } else {
-      localStorage.setItem("theme", "light");
-      themeBtn.textContent = "🌙";
-    }
+  // =========================
+  // THEME SYSTEM
+  // =========================
+  const savedTheme = localStorage.getItem("theme");
+
+  if (savedTheme === "light") {
+    document.body.classList.add("light");
+    themeBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+  } else {
+    themeBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+  }
+
+  themeBtn.onclick = () => {
+    document.body.classList.toggle("light");
+
+    const isLight = document.body.classList.contains("light");
+
+    localStorage.setItem("theme", isLight ? "light" : "dark");
+
+    themeBtn.innerHTML = isLight
+      ? '<i class="fa-solid fa-sun"></i>'
+      : '<i class="fa-solid fa-moon"></i>';
   };
 
   // =========================
-  // 💬 SEND MESSAGE
+  // SEND MESSAGE
   // =========================
-  function sendMessage() {
+  async function sendMessage() {
+
     const text = input.value.trim();
-    if (!text) return;
+
+    if (!text || isTyping) return;
+
+    isTyping = true;
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.6";
 
     if (emptyState) emptyState.style.display = "none";
 
     addMessage(text, "user");
+    saveMemory("User: " + text);
+
     input.value = "";
+    autoResizeInput();
 
     showTyping();
 
-    // ✅ REAL API CALL
-    fetch("http://127.0.0.1:5000/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: text
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+
+      const response = await fetch("http://127.0.0.1:5000/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          memory: localStorage.getItem("mindmeld_memory") || ""
+        })
+      });
+
+      const data = await response.json();
+
+      let cleanReply = (data.reply || "No response received.")
+        .replace(/\*\*/g, "")
+        .replace(/AI:/g, "")
+        .replace(/ChatGPT/g, "MindMeld AI")
+        .trim();
+
+      setTimeout(() => {
+        removeTyping();
+        addBotMessage(cleanReply);
+        saveMemory("MindMeld AI: " + cleanReply);
+      }, 350 + Math.random() * 450);
+
+    } catch (err) {
+
       removeTyping();
-      addBotMessage(data.reply);
-    })
-    .catch(err => {
-      removeTyping();
-      addBotMessage("Error connecting to AI ❌");
+      addBotMessage("Unable to connect to MindMeld AI.");
       console.error(err);
-    });
+
+    } finally {
+
+      setTimeout(() => {
+        isTyping = false;
+        sendBtn.disabled = false;
+        sendBtn.style.opacity = "1";
+        input.focus();
+      }, 200);
+    }
   }
 
-  sendBtn.onclick = sendMessage;
+  // =========================
+  // EVENTS
+  // =========================
+  sendBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   });
 
   // =========================
-  // 🔄 REFRESH CHAT
+  // REFRESH CHAT
   // =========================
   refreshBtn.onclick = () => {
     chatBox.innerHTML = "";
+    removeTyping();
 
     if (emptyState) {
       emptyState.style.display = "block";
       chatBox.appendChild(emptyState);
     }
+
+    input.focus();
   };
 
   // =========================
-  // 📎 ATTACHMENT
+  // FILE ATTACHMENT
   // =========================
-  attachBtn.onclick = () => {
-    fileInput.click();
-  };
+  attachBtn.onclick = () => fileInput.click();
 
   fileInput.onchange = () => {
-    if (fileInput.files.length > 0) {
+
+    if (fileInput.files && fileInput.files.length > 0) {
+
       const file = fileInput.files[0];
 
       if (emptyState) emptyState.style.display = "none";
 
       addMessage("📎 " + file.name, "user");
-
       showTyping();
 
       setTimeout(() => {
         removeTyping();
-        addBotMessage("Received: " + file.name + " ✅");
-      }, 1000);
+        addBotMessage("File received. You can now ask questions about it.");
+      }, 600);
     }
   };
 
   // =========================
-  // 🤖 BOT MESSAGE (TYPE EFFECT)
+  // BOT MESSAGE (TYPING ENGINE FIXED)
   // =========================
   function addBotMessage(text) {
+
     const row = document.createElement("div");
     row.className = "message-row bot";
 
     const icon = document.createElement("div");
     icon.className = "bot-icon";
-    icon.textContent = "✨";
-    
+    icon.innerHTML = '<i class="fa-solid fa-spa"></i>';
+
     const bubble = document.createElement("div");
     bubble.className = "message";
 
     const textSpan = document.createElement("span");
     bubble.appendChild(textSpan);
-
-    const time = document.createElement("div");
-    time.className = "time";
 
     row.appendChild(icon);
     row.appendChild(bubble);
@@ -141,14 +189,32 @@ document.addEventListener("DOMContentLoaded", () => {
     let i = 0;
 
     function type() {
+
       if (i < text.length) {
-        textSpan.innerHTML += text.charAt(i);
+
+        textSpan.textContent += text.charAt(i);
+
+        const c = text.charAt(i);
+
+        let speed;
+
+        if (".,!?".includes(c)) speed = 60;
+        else if (c === " ") speed = 3;
+        else speed = 6 + Math.random() * 8;
+
         i++;
+        setTimeout(type, speed);
+
         scrollDown();
-        setTimeout(type, 15);
+
       } else {
+
+        const time = document.createElement("div");
+        time.className = "time";
         time.innerText = getTime();
         bubble.appendChild(time);
+
+        scrollDown();
       }
     }
 
@@ -156,9 +222,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================
-  // 👤 USER MESSAGE
+  // USER MESSAGE
   // =========================
   function addMessage(text, type) {
+
     const row = document.createElement("div");
     row.className = "message-row " + type;
 
@@ -172,13 +239,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     row.appendChild(bubble);
     chatBox.appendChild(row);
+
     scrollDown();
   }
 
   // =========================
-  // ⏳ TYPING INDICATOR
+  // TYPING
   // =========================
   function showTyping() {
+
+    removeTyping();
+
     const typing = document.createElement("div");
     typing.className = "typing";
     typing.id = "typingIndicator";
@@ -195,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================
-  // ⏱ TIME
+  // UTILITIES
   // =========================
   function getTime() {
     return new Date().toLocaleTimeString([], {
@@ -204,14 +275,33 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // =========================
-  // ⬇️ SCROLL
-  // =========================
+  function autoResizeInput() {
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+  }
+
+  input.addEventListener("input", autoResizeInput);
+
   function scrollDown() {
-    chatBox.scrollTo({
-      top: chatBox.scrollHeight,
-      behavior: "smooth"
+    requestAnimationFrame(() => {
+      chatBox.scrollTop = chatBox.scrollHeight;
     });
+  }
+
+  // =========================
+  // MEMORY SYSTEM
+  // =========================
+  function saveMemory(text) {
+
+    let memory = localStorage.getItem("mindmeld_memory") || "";
+
+    memory += text + "\n";
+
+    if (memory.length > 12000) {
+      memory = memory.slice(-12000);
+    }
+
+    localStorage.setItem("mindmeld_memory", memory);
   }
 
 });
